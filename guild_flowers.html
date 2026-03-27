@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公會花靈管理系統</title>
+    <style>
+        /* 匯入粉圓體 */
+        @import url('https://cdn.jsdelivr.net/gh/justfont/open-huninn-font/font.css');
+
+        :root {
+            --primary-color: #ffb6c1; /* 夢幻粉色 */
+            --bg-color: #ffe6eb;
+            --text-color: #5a4a5e;
+            --rank-red: #ff4d4d;    /* 仙品 */
+            --rank-orange: #ffa500; /* 華品 */
+            --rank-purple: #9370db; /* 珍品 */
+            --rank-blue: #4682b4;   /* 普品 */
+            --rank-green: #3cb371;  /* 凡品 */
+        }
+
+        body {
+            font-family: 'jf-openhuninn-1.1', sans-serif;
+            background: linear-gradient(135deg, #ffe6eb 0%, #ffd1dc 100%);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(255, 182, 193, 0.4);
+            border: 2px solid #fff0f5;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #d16b8a;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        input, select, button {
+            font-family: 'jf-openhuninn-1.1', sans-serif;
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 10px;
+            border: 1px solid #f0c8d0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #ff99a8;
+            transform: translateY(-2px);
+        }
+
+        .flower-tag {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 15px;
+            color: white;
+            font-size: 14px;
+        }
+
+        /* 花種稀有度顏色 */
+        .rank-仙品 { background-color: var(--rank-red); }
+        .rank-華品 { background-color: var(--rank-orange); }
+        .rank-珍品 { background-color: var(--rank-purple); }
+        .rank-普品 { background-color: var(--rank-blue); }
+        .rank-凡品 { background-color: var(--rank-green); }
+
+        .hidden { display: none; }
+        .list-box { border: 1px dashed #d16b8a; padding: 15px; border-radius: 10px; margin-top: 15px; background: rgba(255,255,255,0.5);}
+        .item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
+        .item-row button { width: auto; padding: 5px 10px; margin: 0; background-color: #ff99a8; }
+        
+        .logout-btn { background-color: #ccc; margin-top: 20px; }
+        .logout-btn:hover { background-color: #bbb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-section">
+        <h1>✨ 登入系統 ✨</h1>
+        <input type="text" id="login-id" placeholder="請輸入使用者 ID">
+        <input type="password" id="login-pw" placeholder="請輸入密碼">
+        <button onclick="login()">登入</button>
+        <p style="text-align:center; font-size:12px; color:#999;">預設管理員帳號: admin / 密碼: admin<br>預設成員帳號: user1 / 密碼: 123</p>
+    </div>
+
+    <div id="admin-section" class="hidden">
+        <h1>👑 管理員後台</h1>
+        
+        <h2>新增成員</h2>
+        <input type="text" id="new-user-id" placeholder="成員 ID">
+        <input type="text" id="new-user-pw" placeholder="設定密碼">
+        <select id="new-user-guild">
+            <option value="星星知我心">星星知我心</option>
+            <option value="星星知我心2">星星知我心2</option>
+        </select>
+        <button onclick="addUser()">新增成員</button>
+        <div class="list-box" id="user-list"></div>
+
+        <h2>新增全域花種</h2>
+        <input type="text" id="new-flower-name" placeholder="花靈名稱 (例如: 玫瑰)">
+        <select id="new-flower-rank">
+            <option value="仙品">仙品 (紅色)</option>
+            <option value="華品">華品 (橘色)</option>
+            <option value="珍品">珍品 (紫色)</option>
+            <option value="普品">普品 (藍色)</option>
+            <option value="凡品">凡品 (綠色)</option>
+        </select>
+        <button onclick="addGlobalFlower()">新增花種</button>
+        <div class="list-box" id="global-flower-list"></div>
+
+        <button class="logout-btn" onclick="logout()">登出</button>
+    </div>
+
+    <div id="member-section" class="hidden">
+        <h1>🌸 我的花冊</h1>
+        <p>歡迎，<span id="member-name" style="font-weight:bold; color:#d16b8a;"></span>！</p>
+        <p>所屬公會：<span id="member-guild"></span></p>
+
+        <h2>新增我擁有的花</h2>
+        <select id="member-flower-select"></select>
+        <button onclick="addMemberFlower()">新增至我的花冊</button>
+
+        <h2>目前擁有的花種</h2>
+        <div class="list-box" id="member-flower-list"></div>
+
+        <button class="logout-btn" onclick="logout()">登出</button>
+    </div>
+</div>
+
+<script>
+    // 預設資料初始化
+    let users = JSON.parse(localStorage.getItem('users')) || [
+        { id: 'admin', pw: 'admin', role: 'admin', guild: '管理群' },
+        { id: 'user1', pw: '123', role: 'member', guild: '星星知我心' }
+    ];
+    let globalFlowers = JSON.parse(localStorage.getItem('globalFlowers')) || [
+        { id: 'f1', name: '九尾狐靈', rank: '仙品' },
+        { id: 'f2', name: '繁星薔薇', rank: '華品' }
+    ];
+    let userFlowers = JSON.parse(localStorage.getItem('userFlowers')) || { 'user1': ['f1'] };
+
+    let currentUser = null;
+
+    function saveData() {
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('globalFlowers', JSON.stringify(globalFlowers));
+        localStorage.setItem('userFlowers', JSON.stringify(userFlowers));
+    }
+
+    // 登入邏輯
+    function login() {
+        const id = document.getElementById('login-id').value;
+        const pw = document.getElementById('login-pw').value;
+        
+        const user = users.find(u => u.id === id && u.pw === pw);
+        if (user) {
+            currentUser = user;
+            document.getElementById('login-section').classList.add('hidden');
+            if (user.role === 'admin') {
+                document.getElementById('admin-section').classList.remove('hidden');
+                renderAdminView();
+            } else {
+                document.getElementById('member-section').classList.remove('hidden');
+                renderMemberView();
+            }
+        } else {
+            alert('ID 或密碼錯誤！');
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        document.getElementById('login-id').value = '';
+        document.getElementById('login-pw').value = '';
+        document.getElementById('admin-section').classList.add('hidden');
+        document.getElementById('member-section').classList.add('hidden');
+        document.getElementById('login-section').classList.remove('hidden');
+    }
+
+    // --- 管理員功能 ---
+    function renderAdminView() {
+        // 渲染成員列表
+        const userList = document.getElementById('user-list');
+        userList.innerHTML = '<h3>成員列表</h3>';
+        users.filter(u => u.role === 'member').forEach(u => {
+            userList.innerHTML += `<div class="item-row">
+                <span>[${u.guild}] ID: ${u.id}</span>
+                <button onclick="deleteUser('${u.id}')">刪除</button>
+            </div>`;
+        });
+
+        // 渲染花種列表
+        const flowerList = document.getElementById('global-flower-list');
+        flowerList.innerHTML = '<h3>系統花種庫</h3>';
+        globalFlowers.forEach(f => {
+            flowerList.innerHTML += `<div class="item-row">
+                <span class="flower-tag rank-${f.rank}">${f.rank} - ${f.name}</span>
+                <button onclick="deleteGlobalFlower('${f.id}')">刪除</button>
+            </div>`;
+        });
+    }
+
+    function addUser() {
+        const id = document.getElementById('new-user-id').value;
+        const pw = document.getElementById('new-user-pw').value;
+        const guild = document.getElementById('new-user-guild').value;
+        if (!id || !pw) return alert('請填寫完整資訊');
+        if (users.find(u => u.id === id)) return alert('ID 已存在！');
+        
+        users.push({ id, pw, role: 'member', guild });
+        userFlowers[id] = []; // 初始化該成員的花冊
+        saveData();
+        renderAdminView();
+        document.getElementById('new-user-id').value = '';
+        document.getElementById('new-user-pw').value = '';
+    }
+
+    function deleteUser(id) {
+        users = users.filter(u => u.id !== id);
+        delete userFlowers[id];
+        saveData();
+        renderAdminView();
+    }
+
+    function addGlobalFlower() {
+        const name = document.getElementById('new-flower-name').value;
+        const rank = document.getElementById('new-flower-rank').value;
+        if (!name) return alert('請輸入花靈名稱');
+        
+        const newId = 'f' + Date.now();
+        globalFlowers.push({ id: newId, name, rank });
+        saveData();
+        renderAdminView();
+        document.getElementById('new-flower-name').value = '';
+    }
+
+    function deleteGlobalFlower(id) {
+        globalFlowers = globalFlowers.filter(f => f.id !== id);
+        // 同步刪除成員身上擁有的該種花
+        for (let uid in userFlowers) {
+            userFlowers[uid] = userFlowers[uid].filter(fid => fid !== id);
+        }
+        saveData();
+        renderAdminView();
+    }
+
+    // --- 成員功能 ---
+    function renderMemberView() {
+        document.getElementById('member-name').innerText = currentUser.id;
+        document.getElementById('member-guild').innerText = currentUser.guild;
+
+        // 準備選單
+        const select = document.getElementById('member-flower-select');
+        select.innerHTML = '<option value="">-- 選擇要新增的花 --</option>';
+        globalFlowers.forEach(f => {
+            // 只顯示成員還沒有的花
+            if (!userFlowers[currentUser.id].includes(f.id)) {
+                select.innerHTML += `<option value="${f.id}">[${f.rank}] ${f.name}</option>`;
+            }
+        });
+
+        // 渲染成員擁有的花
+        const myFlowerList = document.getElementById('member-flower-list');
+        myFlowerList.innerHTML = '';
+        const myFlowers = userFlowers[currentUser.id] || [];
+        
+        if (myFlowers.length === 0) {
+            myFlowerList.innerHTML = '<p style="color:#888;">目前花冊空空如也...</p>';
+        } else {
+            myFlowers.forEach(fid => {
+                const flower = globalFlowers.find(f => f.id === fid);
+                if (flower) {
+                    myFlowerList.innerHTML += `<div class="item-row">
+                        <span class="flower-tag rank-${flower.rank}">${flower.name}</span>
+                        <button onclick="removeMemberFlower('${flower.id}')">移除</button>
+                    </div>`;
+                }
+            });
+        }
+    }
+
+    function addMemberFlower() {
+        const fid = document.getElementById('member-flower-select').value;
+        if (!fid) return alert('請選擇花種');
+        
+        if (!userFlowers[currentUser.id]) userFlowers[currentUser.id] = [];
+        userFlowers[currentUser.id].push(fid);
+        saveData();
+        renderMemberView();
+    }
+
+    function removeMemberFlower(fid) {
+        userFlowers[currentUser.id] = userFlowers[currentUser.id].filter(id => id !== fid);
+        saveData();
+        renderMemberView();
+    }
+</script>
+
+</body>
+</html>
